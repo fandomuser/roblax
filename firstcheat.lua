@@ -43,7 +43,7 @@ local function notify(title, text, duration, color)
     gui:Destroy()
 end
 
-notify("Custom MM2 Hack", "Loaded successfully! Press 'RightShift' for menu.", 5, Color3.fromRGB(0, 255, 0))
+notify("Neverloose.cc", "Loaded successfully! Press 'Delete' for menu.", 5, Color3.fromRGB(0, 0, 255))
 
 -- Features Toggles
 local toggles = {
@@ -414,6 +414,7 @@ UserInputService.InputBegan:Connect(function(input)
         mainFrame.Visible = not mainFrame.Visible
     end
 end)
+
 
 
 
