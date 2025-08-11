@@ -8,7 +8,7 @@ local TweenService = game:GetService("TweenService")
 local TweenInfo = TweenInfo.new
 local Workspace = game:GetService("Workspace")
 
--- Enhanced Notification
+-- Enhanced Notification (Higher position)
 local function notify(title, text, duration, color)
     duration = duration or 3
     color = color or Color3.fromRGB(255, 255, 255)
@@ -16,7 +16,7 @@ local function notify(title, text, duration, color)
     gui.IgnoreGuiInset = true
     local frame = Instance.new("Frame", gui)
     frame.Size = UDim2.new(0, 300, 0, 70)
-    frame.Position = UDim2.new(1, -310, 1, -120)
+    frame.Position = UDim2.new(1, -310, 1, -200)  -- Even higher
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
     frame.Transparency = 1
@@ -44,9 +44,9 @@ local function notify(title, text, duration, color)
     textLabel.Font = Enum.Font.Gotham
     textLabel.TextSize = 14
 
-    TweenService:Create(frame, TweenInfo(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0, Position = UDim2.new(1, -310, 1, -130)}):Play()
+    TweenService:Create(frame, TweenInfo(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0, Position = UDim2.new(1, -310, 1, -210)}):Play()
     wait(duration)
-    TweenService:Create(frame, TweenInfo(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1, Position = UDim2.new(1, 0, 1, -130)}):Play()
+    TweenService:Create(frame, TweenInfo(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1, Position = UDim2.new(1, 0, 1, -210)}):Play()
     wait(0.5)
     gui:Destroy()
 end
@@ -82,12 +82,13 @@ local settings = {
     theme = "Dark"
 }
 
--- ESP Improved
+-- Functions (with improvements)
 local espObjects = {}
 local function addESP(player)
     if player == LocalPlayer or not player.Character then return end
     local char = player.Character
-    local head = char:WaitForChild("Head")
+    local head = char:WaitForChild("Head", 5)
+    if not head then return end
     
     local billboard = Instance.new("BillboardGui", head)
     billboard.Size = UDim2.new(0, 200, 0, 50)
@@ -136,17 +137,15 @@ local function updateESP()
     end
 end
 
--- Godmode Improved
 local godmodeConnection
 local function godmode()
     if toggles.godmode and LocalPlayer.Character then
-        if not godmodeConnection then
-            godmodeConnection = LocalPlayer.Character.Humanoid.HealthChanged:Connect(function(health)
-                if health < LocalPlayer.Character.Humanoid.MaxHealth then
-                    LocalPlayer.Character.Humanoid.Health = LocalPlayer.Character.Humanoid.MaxHealth
-                end
-            end)
-        end
+        if godmodeConnection then godmodeConnection:Disconnect() end
+        godmodeConnection = LocalPlayer.Character.Humanoid.HealthChanged:Connect(function(health)
+            if health < LocalPlayer.Character.Humanoid.MaxHealth then
+                LocalPlayer.Character.Humanoid.Health = LocalPlayer.Character.Humanoid.MaxHealth
+            end
+        end)
         LocalPlayer.Character.Humanoid.Health = LocalPlayer.Character.Humanoid.MaxHealth
     elseif godmodeConnection then
         godmodeConnection:Disconnect()
@@ -154,7 +153,6 @@ local function godmode()
     end
 end
 
--- Auto Farm Coins Improved
 local function autoFarmCoins()
     while toggles.autoFarmCoins do
         local coins = {}
@@ -163,20 +161,20 @@ local function autoFarmCoins()
                 table.insert(coins, coin)
             end
         end
+        if #coins == 0 then break end
         table.sort(coins, function(a, b)
             return (a.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < (b.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
         end)
         for _, coin in ipairs(coins) do
             if LocalPlayer.Character then
                 LocalPlayer.Character.HumanoidRootPart.CFrame = coin.CFrame
-                wait(0.1)
+                wait(0.05)
             end
         end
-        wait(0.2)  -- Optimized wait
+        wait(0.1)
     end
 end
 
--- Auto Grab Gun (Improved with check)
 local function autoGrabGun()
     if toggles.autoGrabGun then
         for _, obj in ipairs(Workspace:GetChildren()) do
@@ -192,7 +190,6 @@ local function autoGrabGun()
     end
 end
 
--- Kill All (Improved with check for knife)
 local function killAll()
     if toggles.killAll and (LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")) then
         local knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack.Knife
@@ -200,46 +197,49 @@ local function killAll()
             knife.Parent = LocalPlayer.Character
         end
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character.Humanoid.Health > 0 then
+            if player ~= LocalPlayer and player.Character and player.Character.Humanoid.Health > 0 and (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 5 then
                 LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1)
                 knife:Activate()
-                wait(0.15)  -- Optimized
+                wait(0.1)
             end
         end
     end
 end
 
--- Reveal Roles
 local function revealRoles()
     if toggles.revealRoles then
         for _, player in ipairs(Players:GetPlayers()) do
             local role = "Innocent"
             if player.Backpack:FindFirstChild("Knife") then role = "Murderer" end
             if player.Backpack:FindFirstChild("Gun") then role = "Sheriff" end
-            ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(player.Name .. " is " .. role, "All")
+            if ReplicatedStorage.DefaultChatSystemChatEvents and ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest then
+                ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(player.Name .. " is " .. role, "All")
+            end
         end
         toggles.revealRoles = false
     end
 end
 
--- Speed Hack
 local function speedHack()
     if LocalPlayer.Character then
         LocalPlayer.Character.Humanoid.WalkSpeed = toggles.speedHack and settings.speed or 16
     end
 end
 
--- Aimbot (Improved with FOV check if needed, but simple for now)
 local aimbotConnection
 local function aimbot()
     if toggles.aimbot and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun") then
         local mouse = LocalPlayer:GetMouse()
         mouse.Icon = "rbxasset://textures\\GunCursor.png"
+        if aimbotConnection then aimbotConnection:Disconnect() end
         aimbotConnection = mouse.Button1Down:Connect(function()
             local target = mouse.Target
             if target and target.Parent and target.Parent:FindFirstChild("Humanoid") and target.Parent ~= LocalPlayer.Character then
-                local args = { [1] = target.Parent.HumanoidRootPart.Position }
-                LocalPlayer.Character.Gun.RemoteEvent:FireServer(unpack(args))
+                local gun = LocalPlayer.Character.Gun
+                if gun and gun:FindFirstChild("RemoteEvent") then
+                    local args = { [1] = target.Parent.HumanoidRootPart.Position }
+                    gun.RemoteEvent:FireServer(unpack(args))
+                end
             end
         end)
     elseif aimbotConnection then
@@ -248,7 +248,6 @@ local function aimbot()
     end
 end
 
--- Fly
 local flyConnection
 local function fly()
     if toggles.fly and LocalPlayer.Character then
@@ -257,6 +256,7 @@ local function fly()
         bodyVelocity.Velocity = Vector3.new(0, 0, 0)
         bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         
+        if flyConnection then flyConnection:Disconnect() end
         flyConnection = RunService.RenderStepped:Connect(function()
             bodyVelocity.Velocity = Vector3.new(0, 0, 0)
             local cam = Workspace.CurrentCamera.CFrame
@@ -270,16 +270,16 @@ local function fly()
     elseif flyConnection then
         flyConnection:Disconnect()
         flyConnection = nil
-        if LocalPlayer.Character then
+        if LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity") then
             LocalPlayer.Character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity"):Destroy()
         end
     end
 end
 
--- Infinite Jump
 local infJumpConnection
 local function infJump()
     if toggles.infJump then
+        if infJumpConnection then infJumpConnection:Disconnect() end
         infJumpConnection = UserInputService.JumpRequest:Connect(function()
             if LocalPlayer.Character then
                 LocalPlayer.Character.Humanoid:ChangeState("Jumping")
@@ -291,7 +291,6 @@ local function infJump()
     end
 end
 
--- X-Ray
 local highlights = {}
 local function xray()
     if toggles.xray then
@@ -313,7 +312,6 @@ local function xray()
     end
 end
 
--- TP to Murderer
 local function tpToMurderer()
     if toggles.tpToMurderer then
         for _, player in ipairs(Players:GetPlayers()) do
@@ -326,7 +324,6 @@ local function tpToMurderer()
     end
 end
 
--- Coin ESP
 local coinEspObjects = {}
 local function updateCoinESP()
     if toggles.coinESP then
@@ -356,10 +353,10 @@ local function updateCoinESP()
     end
 end
 
--- NoClip
 local noClipConnection
 local function noClip()
     if toggles.noClip and LocalPlayer.Character then
+        if noClipConnection then noClipConnection:Disconnect() end
         noClipConnection = RunService.Stepped:Connect(function()
             for _, part in ipairs(LocalPlayer.Character:GetChildren()) do
                 if part:IsA("BasePart") then
@@ -380,7 +377,6 @@ local function noClip()
     end
 end
 
--- TP to Sheriff
 local function tpToSheriff()
     if toggles.tpToSheriff then
         for _, player in ipairs(Players:GetPlayers()) do
@@ -393,29 +389,33 @@ local function tpToSheriff()
     end
 end
 
--- Auto Throw Knife
 local function autoThrowKnife()
     if toggles.autoThrowKnife and LocalPlayer.Character:FindFirstChild("Knife") then
         local knife = LocalPlayer.Character.Knife
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character and player.Character.Humanoid.Health > 0 then
-                knife.RemoteEvent:FireServer(player.Character.Head.Position)
-                wait(0.3)
+                if knife:FindFirstChild("RemoteEvent") then
+                    knife.RemoteEvent:FireServer(player.Character.Head.Position)
+                end
+                wait(0.2)
             end
         end
     end
 end
 
--- Silent Aim
 local silentAimConnection
 local function silentAim()
     if toggles.silentAim and LocalPlayer.Character:FindFirstChild("Gun") then
+        if silentAimConnection then silentAimConnection:Disconnect() end
         silentAimConnection = RunService.RenderStepped:Connect(function()
             local mouse = LocalPlayer:GetMouse()
             local target = mouse.Target
             if target and target.Parent and target.Parent:FindFirstChild("Humanoid") and target.Parent ~= LocalPlayer.Character then
-                local args = { [1] = target.Parent.Head.Position + Vector3.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) }
-                LocalPlayer.Character.Gun.RemoteEvent:FireServer(unpack(args))
+                local gun = LocalPlayer.Character.Gun
+                if gun and gun:FindFirstChild("RemoteEvent") then
+                    local args = { [1] = target.Parent.Head.Position + Vector3.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) }
+                    gun.RemoteEvent:FireServer(unpack(args))
+                end
             end
         end)
     elseif silentAimConnection then
@@ -424,35 +424,56 @@ local function silentAim()
     end
 end
 
--- Unlock Crates
 local function unlockCrates()
     if toggles.unlockCrates then
         for _, crate in ipairs(Workspace:GetChildren()) do
             if crate:IsA("Model") and crate.Name:match("Crate") then
-                ReplicatedStorage.Remotes.OpenCrate:FireServer(crate)
+                if ReplicatedStorage.Remotes and ReplicatedStorage.Remotes.OpenCrate then
+                    ReplicatedStorage.Remotes.OpenCrate:FireServer(crate)
+                end
             end
         end
         toggles.unlockCrates = false
     end
 end
 
--- Anti-AFK
+local antiAFKConnection
 local function antiAFK()
     if toggles.antiAFK then
-        LocalPlayer.Idled:Connect(function()
+        if antiAFKConnection then antiAFKConnection:Disconnect() end
+        antiAFKConnection = LocalPlayer.Idled:Connect(function()
             game:GetService("VirtualUser"):ClickButton2(Vector2.new())
         end)
+    elseif antiAFKConnection then
+        antiAFKConnection:Disconnect()
+        antiAFKConnection = nil
     end
 end
 
--- Initialize Features
+-- Persistence
+local mainLoopConnection
 local function initializeFeatures()
+    -- Clear previous connections
+    if mainLoopConnection then mainLoopConnection:Disconnect() end
+    if godmodeConnection then godmodeConnection:Disconnect() end
+    if aimbotConnection then aimbotConnection:Disconnect() end
+    if flyConnection then flyConnection:Disconnect() end
+    if infJumpConnection then infJumpConnection:Disconnect() end
+    if noClipConnection then noClipConnection:Disconnect() end
+    if silentAimConnection then silentAimConnection:Disconnect() end
+    if antiAFKConnection then antiAFKConnection:Disconnect() end
+    espObjects = {}
+    highlights = {}
+    coinEspObjects = {}
+    
+    -- Re-add ESP
     for _, player in ipairs(Players:GetPlayers()) do
         addESP(player)
     end
     Players.PlayerAdded:Connect(addESP)
 
-    local mainLoopConnection = RunService.RenderStepped:Connect(function()
+    -- Main Loop
+    mainLoopConnection = RunService.RenderStepped:Connect(function()
         updateESP()
         godmode()
         speedHack()
@@ -474,31 +495,25 @@ local function initializeFeatures()
     end)
 
     spawn(autoFarmCoins)
-
-    return mainLoopConnection
 end
 
-local mainLoopConnection
-LocalPlayer.CharacterAdded:Connect(function()
-    wait(1)
-    if mainLoopConnection then
-        mainLoopConnection:Disconnect()
-    end
-    mainLoopConnection = initializeFeatures()
+LocalPlayer.CharacterAdded:Connect(function(character)
+    repeat wait() until character and character:FindFirstChild("HumanoidRootPart")
+    initializeFeatures()
     notify("Neverloose.cc", "Скрипт перезапущен после респавна!", 3, Color3.fromRGB(0, 255, 0))
 end)
 
 if LocalPlayer.Character then
-    mainLoopConnection = initializeFeatures()
+    initializeFeatures()
 end
 
--- Beautiful Menu (Improved background, fixed tab overlap)
+-- Menu
 local menuGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 menuGui.IgnoreGuiInset = true
 local mainFrame = Instance.new("Frame", menuGui)
 mainFrame.Size = UDim2.new(0, 400, 0, 450)
 mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
-mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)  -- Darker blue-ish
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.ClipsDescendants = true
@@ -517,7 +532,7 @@ gradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 10, 20)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 10))
 }
-gradient.Rotation = 45  -- Diagonal gradient for beauty
+gradient.Rotation = 90  -- Vertical gradient
 
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
@@ -559,7 +574,6 @@ closeButton.MouseButton1Click:Connect(function()
     notify("Меню", "Закрыто. Нажми Delete для открытия.", 3, Color3.fromRGB(255, 50, 50))
 end)
 
--- Sidebar
 local sidebar = Instance.new("Frame", mainFrame)
 sidebar.Size = UDim2.new(0, 100, 1, -40)
 sidebar.Position = UDim2.new(0, 0, 0, 40)
@@ -590,7 +604,8 @@ for _, tabName in ipairs(tabs) do
     local contentFrame = Instance.new("ScrollingFrame", mainFrame)
     contentFrame.Size = UDim2.new(1, -100, 1, -40)
     contentFrame.Position = UDim2.new(0, 100, 0, 40)
-    contentFrame.BackgroundTransparency = 1
+    contentFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    contentFrame.BackgroundTransparency = 0.9
     contentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     contentFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
     contentFrame.ScrollBarThickness = 4
@@ -605,34 +620,36 @@ for _, tabName in ipairs(tabs) do
 
     tabButton.MouseButton1Click:Connect(function()
         if currentTabFrame then
-            local oldFrame = currentTabFrame
-            TweenService:Create(oldFrame, TweenInfo(0.3, Enum.EasingStyle.Quad), {Transparency = 1, Position = UDim2.new(0, 120, 0, 40)}):Play()
-            oldFrame.TweenCompleted:Wait()  -- Wait for animation to finish
-            oldFrame.Visible = false
+            local oldTween = TweenService:Create(currentTabFrame, TweenInfo(0.3, Enum.EasingStyle.Quad), {Transparency = 1, Position = UDim2.new(0, 120, 0, 40)})
+            oldTween:Play()
+            oldTween.Completed:Wait()  -- Correct wait for completion
+            currentTabFrame.Visible = false
         end
         contentFrame.Position = UDim2.new(0, 80, 0, 40)
         contentFrame.Transparency = 1
         contentFrame.Visible = true
-        TweenService:Create(contentFrame, TweenInfo(0.3, Enum.EasingStyle.Quad), {Transparency = 0, Position = UDim2.new(0, 100, 0, 40)}):Play()
+        local newTween = TweenService:Create(contentFrame, TweenInfo(0.3, Enum.EasingStyle.Quad), {Transparency = 0, Position = UDim2.new(0, 100, 0, 40)})
+        newTween:Play()
         currentTabFrame = contentFrame
     end)
 end
 
--- Custom Switch (Improved layout to prevent overlap)
+-- Add switches and sliders (same as before, but with text size 14 and truncate)
+
 local function addSwitchToTab(tabName, name, key)
     local holder = Instance.new("Frame", tabFrames[tabName])
     holder.Size = UDim2.new(1, 0, 0, 40)
     holder.BackgroundTransparency = 1
 
     local label = Instance.new("TextLabel", holder)
-    label.Size = UDim2.new(0.6, 0, 1, 0)  -- Reduced width to avoid overlap
+    label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Position = UDim2.new(0, 10, 0, 0)
     label.Text = name
     label.TextColor3 = Color3.fromRGB(200, 200, 200)
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.Gotham
-    label.TextSize = 14  -- Smaller text
-    label.TextTruncate = Enum.TextTruncate.SplitWord  -- Truncate if too long
+    label.TextSize = 14
+    label.TextTruncate = Enum.TextTruncate.SplitWord
 
     local switchFrame = Instance.new("Frame", holder)
     switchFrame.Size = UDim2.new(0, 60, 0, 30)
@@ -692,7 +709,6 @@ addSwitchToTab("Misc", "TP to Sheriff", "tpToSheriff")
 addSwitchToTab("Misc", "Unlock Crates", "unlockCrates")
 addSwitchToTab("Misc", "Anti-AFK", "antiAFK")
 
--- Sliders
 local function addSliderToTab(tabName, name, settingKey, min, max, default)
     local holder = Instance.new("Frame", tabFrames[tabName])
     holder.Size = UDim2.new(1, 0, 0, 50)
@@ -738,13 +754,12 @@ end
 addSliderToTab("Movement", "Speed", "speed", 16, 200, 50)
 addSliderToTab("Movement", "Fly Speed", "flySpeed", 50, 300, 100)
 
--- Theme Changer
 local themeHolder = Instance.new("Frame", tabFrames["Misc"])
 themeHolder.Size = UDim2.new(1, 0, 0, 40)
 themeHolder.BackgroundTransparency = 1
 
 local themeLabel = Instance.new("TextLabel", themeHolder)
-themeLabel.Size = UDim2.new(0.6, 0, 1, 0)
+themeLabel.Size = UDim2.new(0.7, 0, 1, 0)
 themeLabel.Position = UDim2.new(0, 10, 0, 0)
 themeLabel.Text = "Тема"
 themeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -770,10 +785,9 @@ themeButton.MouseButton1Click:Connect(function()
     title.TextColor3 = textColor
     sidebar.BackgroundColor3 = (settings.theme == "Dark") and Color3.fromRGB(5, 5, 10) or Color3.fromRGB(200, 200, 200)
     titleBar.BackgroundColor3 = (settings.theme == "Dark") and Color3.fromRGB(5, 5, 10) or Color3.fromRGB(180, 180, 180)
-    -- Update gradient etc. if needed
 end)
 
--- Draggable
+-- Draggable (same)
 local dragging, dragInput, dragStart, startPos
 titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -804,7 +818,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Menu Toggle Animation
+-- Menu Toggle (same)
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.Delete then
         if mainFrame.Visible then
