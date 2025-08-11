@@ -82,6 +82,8 @@ local settings = {
     theme = "Dark"
 }
 
+local selectedPlayer = nil  -- For TP to Player
+
 -- Functions (with improvements)
 local espObjects = {}
 local function addESP(player)
@@ -450,6 +452,13 @@ local function antiAFK()
     end
 end
 
+local function tpToPlayer(targetPlayer)
+    if targetPlayer and targetPlayer.Character and LocalPlayer.Character then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+        notify("TP", "Телепортирован к " .. targetPlayer.Name, 3, Color3.fromRGB(0, 255, 0))
+    end
+end
+
 -- Persistence
 local mainLoopConnection
 local function initializeFeatures()
@@ -794,6 +803,79 @@ themeButton.MouseButton1Click:Connect(function()
     title.TextColor3 = textColor
     sidebar.BackgroundColor3 = (settings.theme == "Dark") and Color3.fromRGB(5, 5, 10) or Color3.fromRGB(200, 200, 200)
     titleBar.BackgroundColor3 = (settings.theme == "Dark") and Color3.fromRGB(5, 5, 10) or Color3.fromRGB(180, 180, 180)
+end)
+
+-- TP to Player (New)
+local tpPlayerHolder = Instance.new("Frame", tabFrames["Misc"])
+tpPlayerHolder.Size = UDim2.new(1, 0, 0, 150)
+tpPlayerHolder.BackgroundTransparency = 1
+
+local tpLabel = Instance.new("TextLabel", tpPlayerHolder)
+tpLabel.Size = UDim2.new(1, 0, 0, 30)
+tpLabel.Position = UDim2.new(0, 0, 0, 0)
+tpLabel.Text = "TP to Player"
+tpLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+tpLabel.BackgroundTransparency = 1
+tpLabel.Font = Enum.Font.GothamBold
+tpLabel.TextSize = 16
+
+local playerListFrame = Instance.new("ScrollingFrame", tpPlayerHolder)
+playerListFrame.Size = UDim2.new(1, -20, 0, 80)
+playerListFrame.Position = UDim2.new(0, 10, 0, 30)
+playerListFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+playerListFrame.BorderSizePixel = 0
+playerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+playerListFrame.ScrollBarThickness = 4
+
+local playerListLayout = Instance.new("UIListLayout", playerListFrame)
+playerListLayout.SortOrder = Enum.SortOrder.Name
+playerListLayout.Padding = UDim.new(0, 5)
+
+local function updatePlayerList()
+    playerListFrame:ClearAllChildren()
+    playerListLayout = Instance.new("UIListLayout", playerListFrame)
+    playerListLayout.SortOrder = Enum.SortOrder.Name
+    playerListLayout.Padding = UDim.new(0, 5)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local playerButton = Instance.new("TextButton", playerListFrame)
+            playerButton.Size = UDim2.new(1, 0, 0, 30)
+            playerButton.Text = player.Name
+            playerButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            playerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            playerButton.Font = Enum.Font.Gotham
+            playerButton.TextSize = 14
+            local btnCorner = Instance.new("UICorner", playerButton)
+            btnCorner.CornerRadius = UDim.new(0, 6)
+            
+            playerButton.MouseButton1Click:Connect(function()
+                selectedPlayer = player
+                notify("TP", "Выбран игрок: " .. player.Name, 3, Color3.fromRGB(0, 255, 0))
+            end)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+updatePlayerList()
+
+local tpButton = Instance.new("TextButton", tpPlayerHolder)
+tpButton.Size = UDim2.new(1, -20, 0, 30)
+tpButton.Position = UDim2.new(0, 10, 0, 120)
+tpButton.Text = "TP to Selected Player"
+tpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+local tpCorner = Instance.new("UICorner", tpButton)
+tpCorner.CornerRadius = UDim.new(0, 6)
+
+tpButton.MouseButton1Click:Connect(function()
+    if selectedPlayer then
+        tpToPlayer(selectedPlayer)
+    else
+        notify("TP", "Выберите игрока сначала!", 3, Color3.fromRGB(255, 0, 0))
+    end
 end)
 
 -- Draggable (same)
