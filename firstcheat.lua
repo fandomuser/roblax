@@ -510,6 +510,7 @@ end
 -- Menu
 local menuGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 menuGui.IgnoreGuiInset = true
+menuGui.ResetOnSpawn = false  -- Preserve GUI on respawn
 local mainFrame = Instance.new("Frame", menuGui)
 mainFrame.Size = UDim2.new(0, 400, 0, 450)
 mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
@@ -547,6 +548,16 @@ title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(0, 150, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
+
+local devLabel = Instance.new("TextLabel", titleBar)
+devLabel.Text = "Developers: cry_alone001"
+devLabel.Size = UDim2.new(0.3, 0, 0.5, 0)
+devLabel.Position = UDim2.new(0.05, 0, 0.5, 0)
+devLabel.BackgroundTransparency = 1
+devLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+devLabel.Font = Enum.Font.Gotham
+devLabel.TextSize = 12
+devLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local minButton = Instance.new("TextButton", titleBar)
 minButton.Size = UDim2.new(0, 30, 0, 30)
@@ -634,8 +645,7 @@ for _, tabName in ipairs(tabs) do
     end)
 end
 
--- Add switches and sliders (same as before, but with text size 14 and truncate)
-
+-- Custom Switch (Fixed toggle issue by ensuring updateSwitch is called correctly)
 local function addSwitchToTab(tabName, name, key)
     local holder = Instance.new("Frame", tabFrames[tabName])
     holder.Size = UDim2.new(1, 0, 0, 40)
@@ -662,8 +672,8 @@ local function addSwitchToTab(tabName, name, key)
 
     local knob = Instance.new("Frame", switchFrame)
     knob.Size = UDim2.new(0.5, -2, 1, -2)
-    knob.Position = UDim2.new(0, 1, 0, 1)
-    knob.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    knob.Position = UDim2.new(toggles[key] and 0.5 or 0, 1, 0, 1)  -- Initial position based on toggle
+    knob.BackgroundColor3 = toggles[key] and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
     local knobCorner = Instance.new("UICorner", knob)
     knobCorner.CornerRadius = UDim.new(1, 0)
     local knobShadow = Instance.new("UIStroke", knob)
@@ -671,11 +681,10 @@ local function addSwitchToTab(tabName, name, key)
     knobShadow.Transparency = 0.5
 
     local function updateSwitch()
-        local targetPos = toggles[key] and UDim2.new(0.5, 1, 0, 1) or UDim2.new(0, 1, 0, 1)
+        local targetPos = UDim2.new(toggles[key] and 0.5 or 0, 1, 0, 1)
         local targetColor = toggles[key] and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
         TweenService:Create(knob, TweenInfo(0.2, Enum.EasingStyle.Quad), {Position = targetPos, BackgroundColor3 = targetColor}):Play()
     end
-    updateSwitch()
 
     switchFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
