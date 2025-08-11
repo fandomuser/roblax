@@ -410,7 +410,8 @@ end)
 
 -- Toggle Menu Keybind (Changed to RightShift for convenience)
 UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
+    if input.KeyCode == Enum.KeyCode.Delete then
         mainFrame.Visible = not mainFrame.Visible
     end
 end)
+
