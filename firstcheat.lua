@@ -328,10 +328,10 @@ gradient.Color = ColorSequence.new{
 }
 
 local title = Instance.new("TextLabel", mainFrame)
-title.Text = "Penis.lua"
+title.Text = "Neverloose.cc"
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(0, 255, 0)
+title.TextColor3 = Color3.fromRGB(0, 0, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
@@ -414,5 +414,6 @@ UserInputService.InputBegan:Connect(function(input)
         mainFrame.Visible = not mainFrame.Visible
     end
 end)
+
 
 
