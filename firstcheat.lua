@@ -38,12 +38,12 @@ local function notify(title, text, duration, color)
     textLabel.Font = Enum.Font.Gotham
     textLabel.TextSize = 12
     
-    TweenService:Create(frame, TweenInfo(duration, Enum.EasingStyle.Linear), {Position = UDim2.new(1, 0, 1, -70)}):Play()
+    TweenService:Create(frame, TweenInfo(duration, Enum.EasingStyle.Linear), {Position = UDim2.new(1, 0, 1, -90)}):Play()
     wait(duration + 0.5)
     gui:Destroy()
 end
 
-notify("Neverloose.cc", "Loaded successfully! Press 'Delete' for menu.", 5, Color3.fromRGB(0, 0, 255))
+notify("Neverloose.cc", "Loaded successfully! Press 'Delete' for open the menu.", 5, Color3.fromRGB(0, 0, 255))
 
 -- Features Toggles
 local toggles = {
@@ -414,8 +414,3 @@ UserInputService.InputBegan:Connect(function(input)
         mainFrame.Visible = not mainFrame.Visible
     end
 end)
-
-
-
-
-
