@@ -156,7 +156,7 @@ end
 
 -- Auto Farm Coins Improved
 local function autoFarmCoins()
-    while toggles.autoFarmCoins and wait(0.2) do
+    while toggles.autoFarmCoins do
         local coins = {}
         for _, coin in ipairs(Workspace:GetChildren()) do
             if coin.Name == "Coin_Server" then
@@ -172,16 +172,17 @@ local function autoFarmCoins()
                 wait(0.1)
             end
         end
+        wait(0.2)  -- Optimized wait
     end
 end
 
--- Auto Grab Gun
+-- Auto Grab Gun (Improved with check)
 local function autoGrabGun()
     if toggles.autoGrabGun then
         for _, obj in ipairs(Workspace:GetChildren()) do
-            if obj.Name == "GunDrop" and LocalPlayer.Character then
+            if obj.Name == "GunDrop" and LocalPlayer.Character and not LocalPlayer.Backpack:FindFirstChild("Gun") then
                 LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
-                wait(0.5)
+                wait(0.3)
                 local prompt = obj:FindFirstChildOfClass("ProximityPrompt")
                 if prompt then
                     fireproximityprompt(prompt)
@@ -191,16 +192,18 @@ local function autoGrabGun()
     end
 end
 
--- Kill All
+-- Kill All (Improved with check for knife)
 local function killAll()
-    if toggles.killAll and LocalPlayer.Backpack:FindFirstChild("Knife") then
-        local knife = LocalPlayer.Backpack.Knife
-        knife.Parent = LocalPlayer.Character
+    if toggles.killAll and (LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")) then
+        local knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack.Knife
+        if knife.Parent ~= LocalPlayer.Character then
+            knife.Parent = LocalPlayer.Character
+        end
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character and player.Character.Humanoid.Health > 0 then
                 LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1)
                 knife:Activate()
-                wait(0.2)
+                wait(0.15)  -- Optimized
             end
         end
     end
@@ -226,7 +229,7 @@ local function speedHack()
     end
 end
 
--- Aimbot
+-- Aimbot (Improved with FOV check if needed, but simple for now)
 local aimbotConnection
 local function aimbot()
     if toggles.aimbot and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun") then
@@ -442,15 +445,13 @@ local function antiAFK()
     end
 end
 
--- Initialize Features (for persistence)
+-- Initialize Features
 local function initializeFeatures()
-    -- ESP
     for _, player in ipairs(Players:GetPlayers()) do
         addESP(player)
     end
     Players.PlayerAdded:Connect(addESP)
 
-    -- Main Loop
     local mainLoopConnection = RunService.RenderStepped:Connect(function()
         updateESP()
         godmode()
@@ -474,11 +475,9 @@ local function initializeFeatures()
 
     spawn(autoFarmCoins)
 
-    -- Return connection to disconnect if needed
     return mainLoopConnection
 end
 
--- Persistence on respawn
 local mainLoopConnection
 LocalPlayer.CharacterAdded:Connect(function()
     wait(1)
@@ -489,18 +488,17 @@ LocalPlayer.CharacterAdded:Connect(function()
     notify("Neverloose.cc", "Скрипт перезапущен после респавна!", 3, Color3.fromRGB(0, 255, 0))
 end)
 
--- Initial init
 if LocalPlayer.Character then
     mainLoopConnection = initializeFeatures()
 end
 
--- Beautiful Menu
+-- Beautiful Menu (Improved background, fixed tab overlap)
 local menuGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 menuGui.IgnoreGuiInset = true
 local mainFrame = Instance.new("Frame", menuGui)
 mainFrame.Size = UDim2.new(0, 400, 0, 450)
 mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)  -- Darker blue-ish
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.ClipsDescendants = true
@@ -515,13 +513,15 @@ stroke.Transparency = 0.5
 
 local gradient = Instance.new("UIGradient", mainFrame)
 gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 35)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 15))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 30)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 10, 20)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 10))
 }
+gradient.Rotation = 45  -- Diagonal gradient for beauty
 
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
-titleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+titleBar.BackgroundColor3 = Color3.fromRGB(5, 5, 10)
 titleBar.BorderSizePixel = 0
 
 local title = Instance.new("TextLabel", titleBar)
@@ -536,7 +536,7 @@ title.TextSize = 20
 local minButton = Instance.new("TextButton", titleBar)
 minButton.Size = UDim2.new(0, 30, 0, 30)
 minButton.Position = UDim2.new(0.85, 0, 0, 5)
-minButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+minButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 minButton.Text = "-"
 minButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 local minCorner = Instance.new("UICorner", minButton)
@@ -563,7 +563,7 @@ end)
 local sidebar = Instance.new("Frame", mainFrame)
 sidebar.Size = UDim2.new(0, 100, 1, -40)
 sidebar.Position = UDim2.new(0, 0, 0, 40)
-sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+sidebar.BackgroundColor3 = Color3.fromRGB(5, 5, 10)
 sidebar.BorderSizePixel = 0
 
 local sidebarLayout = Instance.new("UIListLayout", sidebar)
@@ -578,7 +578,7 @@ for _, tabName in ipairs(tabs) do
     local tabButton = Instance.new("TextButton", sidebar)
     tabButton.Size = UDim2.new(1, 0, 0, 40)
     tabButton.Text = tabName
-    tabButton.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    tabButton.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
     tabButton.TextColor3 = Color3.fromRGB(150, 150, 255)
     tabButton.Font = Enum.Font.GothamSemibold
     tabButton.TextSize = 16
@@ -605,7 +605,10 @@ for _, tabName in ipairs(tabs) do
 
     tabButton.MouseButton1Click:Connect(function()
         if currentTabFrame then
-            TweenService:Create(currentTabFrame, TweenInfo(0.3, Enum.EasingStyle.Quad), {Transparency = 1, Position = UDim2.new(0, 120, 0, 40)}):Play()
+            local oldFrame = currentTabFrame
+            TweenService:Create(oldFrame, TweenInfo(0.3, Enum.EasingStyle.Quad), {Transparency = 1, Position = UDim2.new(0, 120, 0, 40)}):Play()
+            oldFrame.TweenCompleted:Wait()  -- Wait for animation to finish
+            oldFrame.Visible = false
         end
         contentFrame.Position = UDim2.new(0, 80, 0, 40)
         contentFrame.Transparency = 1
@@ -615,20 +618,21 @@ for _, tabName in ipairs(tabs) do
     end)
 end
 
--- Custom Switch
+-- Custom Switch (Improved layout to prevent overlap)
 local function addSwitchToTab(tabName, name, key)
     local holder = Instance.new("Frame", tabFrames[tabName])
     holder.Size = UDim2.new(1, 0, 0, 40)
     holder.BackgroundTransparency = 1
 
     local label = Instance.new("TextLabel", holder)
-    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Size = UDim2.new(0.6, 0, 1, 0)  -- Reduced width to avoid overlap
     label.Position = UDim2.new(0, 10, 0, 0)
     label.Text = name
     label.TextColor3 = Color3.fromRGB(200, 200, 200)
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.Gotham
-    label.TextSize = 15
+    label.TextSize = 14  -- Smaller text
+    label.TextTruncate = Enum.TextTruncate.SplitWord  -- Truncate if too long
 
     local switchFrame = Instance.new("Frame", holder)
     switchFrame.Size = UDim2.new(0, 60, 0, 30)
@@ -700,7 +704,7 @@ local function addSliderToTab(tabName, name, settingKey, min, max, default)
     label.TextColor3 = Color3.fromRGB(200, 200, 200)
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.Gotham
-    label.TextSize = 15
+    label.TextSize = 14
     
     local sliderFrame = Instance.new("Frame", holder)
     sliderFrame.Size = UDim2.new(1, -20, 0.3, 0)
@@ -734,19 +738,19 @@ end
 addSliderToTab("Movement", "Speed", "speed", 16, 200, 50)
 addSliderToTab("Movement", "Fly Speed", "flySpeed", 50, 300, 100)
 
--- Theme Changer (as switch-like button)
+-- Theme Changer
 local themeHolder = Instance.new("Frame", tabFrames["Misc"])
 themeHolder.Size = UDim2.new(1, 0, 0, 40)
 themeHolder.BackgroundTransparency = 1
 
 local themeLabel = Instance.new("TextLabel", themeHolder)
-themeLabel.Size = UDim2.new(0.7, 0, 1, 0)
+themeLabel.Size = UDim2.new(0.6, 0, 1, 0)
 themeLabel.Position = UDim2.new(0, 10, 0, 0)
 themeLabel.Text = "Тема"
 themeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 themeLabel.BackgroundTransparency = 1
 themeLabel.Font = Enum.Font.Gotham
-themeLabel.TextSize = 15
+themeLabel.TextSize = 14
 
 local themeButton = Instance.new("TextButton", themeHolder)
 themeButton.Size = UDim2.new(0, 60, 0, 30)
@@ -760,12 +764,13 @@ themeCorner.CornerRadius = UDim.new(0, 5)
 themeButton.MouseButton1Click:Connect(function()
     settings.theme = (settings.theme == "Dark") and "Light" or "Dark"
     themeButton.Text = settings.theme
-    local bgColor = (settings.theme == "Dark") and Color3.fromRGB(20, 20, 25) or Color3.fromRGB(220, 220, 220)
+    local bgColor = (settings.theme == "Dark") and Color3.fromRGB(10, 10, 15) or Color3.fromRGB(220, 220, 220)
     local textColor = (settings.theme == "Dark") and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
     mainFrame.BackgroundColor3 = bgColor
     title.TextColor3 = textColor
-    sidebar.BackgroundColor3 = (settings.theme == "Dark") and Color3.fromRGB(15, 15, 20) or Color3.fromRGB(200, 200, 200)
-    -- Update more if needed
+    sidebar.BackgroundColor3 = (settings.theme == "Dark") and Color3.fromRGB(5, 5, 10) or Color3.fromRGB(200, 200, 200)
+    titleBar.BackgroundColor3 = (settings.theme == "Dark") and Color3.fromRGB(5, 5, 10) or Color3.fromRGB(180, 180, 180)
+    -- Update gradient etc. if needed
 end)
 
 -- Draggable
