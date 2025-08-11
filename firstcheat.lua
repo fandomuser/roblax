@@ -84,19 +84,18 @@ local settings = {
 
 local selectedPlayer = nil  -- For TP to Player
 
--- Ultimate ESP System (Completely Rewritten for Maximum Beauty and Functionality)
+-- Ultimate ESP System (Adjusted: Removed HP bar and tracers, increased transparency)
 local espObjects = {}
 local function addESP(player)
     if player == LocalPlayer or not player.Character then return end
     local char = player.Character
     local head = char:WaitForChild("Head", 5)
     local root = char:WaitForChild("HumanoidRootPart", 5)
-    local humanoid = char:WaitForChild("Humanoid", 5)
-    if not head or not root or not humanoid then return end
+    if not head or not root then return end
 
-    -- Billboard for Name, Role, Distance, Health Bar
+    -- Billboard for Name, Role, Distance
     local billboard = Instance.new("BillboardGui", head)
-    billboard.Size = UDim2.new(0, 250, 0, 100)
+    billboard.Size = UDim2.new(0, 250, 0, 80)
     billboard.AlwaysOnTop = true
     billboard.StudsOffset = Vector3.new(0, 3, 0)
     
@@ -105,7 +104,7 @@ local function addESP(player)
     frame.BackgroundTransparency = 1
     
     local nameLabel = Instance.new("TextLabel", frame)
-    nameLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
     nameLabel.Position = UDim2.new(0, 0, 0, 0)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -115,8 +114,8 @@ local function addESP(player)
     nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     
     local roleLabel = Instance.new("TextLabel", frame)
-    roleLabel.Size = UDim2.new(1, 0, 0.25, 0)
-    roleLabel.Position = UDim2.new(0, 0, 0.3, 0)
+    roleLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    roleLabel.Position = UDim2.new(0, 0, 0.4, 0)
     roleLabel.BackgroundTransparency = 1
     roleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     roleLabel.Font = Enum.Font.Gotham
@@ -125,8 +124,8 @@ local function addESP(player)
     roleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     
     local distLabel = Instance.new("TextLabel", frame)
-    distLabel.Size = UDim2.new(1, 0, 0.2, 0)
-    distLabel.Position = UDim2.new(0, 0, 0.55, 0)
+    distLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    distLabel.Position = UDim2.new(0, 0, 0.7, 0)
     distLabel.BackgroundTransparency = 1
     distLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
     distLabel.Font = Enum.Font.Gotham
@@ -134,71 +133,29 @@ local function addESP(player)
     distLabel.TextStrokeTransparency = 0.5
     distLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     
-    local healthBarFrame = Instance.new("Frame", frame)
-    healthBarFrame.Size = UDim2.new(1, 0, 0.15, 0)
-    healthBarFrame.Position = UDim2.new(0, 0, 0.75, 0)
-    healthBarFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    healthBarFrame.BorderSizePixel = 0
-    local healthCorner = Instance.new("UICorner", healthBarFrame)
-    healthCorner.CornerRadius = UDim.new(0, 4)
-    
-    local healthFill = Instance.new("Frame", healthBarFrame)
-    healthFill.Size = UDim2.new(1, 0, 1, 0)
-    healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    local fillCorner = Instance.new("UICorner", healthFill)
-    fillCorner.CornerRadius = UDim.new(0, 4)
-    local healthGradient = Instance.new("UIGradient", healthFill)
-    healthGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 0))
-    }
-    
-    -- 3D Box with Chams Effect
+    -- 3D Box with High Transparency
     local box = Instance.new("BoxHandleAdornment", char)
     box.Size = Vector3.new(4, 6, 2)
     box.Adornee = char
     box.AlwaysOnTop = true
-    box.Transparency = 0.6
-    box.ZIndex = 5
+    box.Transparency = 0.9  -- Increased transparency
+    box.ZIndex = 0
     box.Color3 = Color3.fromRGB(255, 255, 255)
     
+    -- Chams with High Transparency for Skin Visibility
     local chams = Instance.new("Highlight", char)
-    chams.FillTransparency = 0.8
-    chams.OutlineTransparency = 0
+    chams.FillTransparency = 0.95  -- Very transparent fill
+    chams.OutlineTransparency = 0.5
     chams.FillColor = Color3.fromRGB(255, 255, 255)
     chams.OutlineColor = Color3.fromRGB(255, 255, 255)
-    
-    -- Tracer Line (Using Beam for Beauty)
-    local tracerAttachment0 = Instance.new("Attachment", Workspace.CurrentCamera)
-    tracerAttachment0.Name = "TracerAttach0_" .. player.Name
-    tracerAttachment0.Position = Vector3.new(0, -Workspace.CurrentCamera.ViewportSize.Y / 2, 0)  -- Bottom of screen
-    
-    local tracerAttachment1 = Instance.new("Attachment", root)
-    tracerAttachment1.Name = "TracerAttach1_" .. player.Name
-    
-    local tracerBeam = Instance.new("Beam", Workspace.CurrentCamera)
-    tracerBeam.Attachment0 = tracerAttachment0
-    tracerBeam.Attachment1 = tracerAttachment1
-    tracerBeam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-    tracerBeam.Transparency = NumberSequence.new(0.5)
-    tracerBeam.Width0 = 0.2
-    tracerBeam.Width1 = 0.2
-    tracerBeam.LightEmission = 1
-    tracerBeam.LightInfluence = 0
-    tracerBeam.FaceCamera = true
-    tracerBeam.Enabled = false
     
     espObjects[player] = {
         billboard = billboard,
         nameLabel = nameLabel,
         roleLabel = roleLabel,
         distLabel = distLabel,
-        healthFill = healthFill,
         box = box,
-        chams = chams,
-        tracerBeam = tracerBeam,
-        tracerAttach0 = tracerAttachment0,
-        tracerAttach1 = tracerAttachment1
+        chams = chams
     }
 end
 
@@ -206,10 +163,8 @@ local function updateESP()
     for player, objs in pairs(espObjects) do
         if toggles.esp and player.Character and LocalPlayer.Character then
             local char = player.Character
-            local head = char:FindFirstChild("Head")
             local root = char:FindFirstChild("HumanoidRootPart")
-            local humanoid = char:FindFirstChild("Humanoid")
-            if not head or not root or not humanoid then continue end
+            if not root then continue end
             
             local role = "Innocent"
             local color = Color3.fromRGB(0, 255, 0)
@@ -223,7 +178,6 @@ local function updateESP()
             end
             
             local dist = (root.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            local healthPercent = humanoid.Health / humanoid.MaxHealth
             
             objs.nameLabel.Text = player.Name
             objs.nameLabel.TextColor3 = color
@@ -233,9 +187,6 @@ local function updateESP()
             
             objs.distLabel.Text = "Dist: " .. math.floor(dist)
             
-            objs.healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
-            objs.healthFill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
-            
             objs.box.Color3 = color
             objs.box.Visible = true
             
@@ -243,15 +194,11 @@ local function updateESP()
             objs.chams.OutlineColor = color
             objs.chams.Enabled = true
             
-            objs.tracerBeam.Color = ColorSequence.new(color)
-            objs.tracerBeam.Enabled = true
-            
             objs.billboard.Enabled = true
         else
             objs.billboard.Enabled = false
             objs.box.Visible = false
             objs.chams.Enabled = false
-            objs.tracerBeam.Enabled = false
         end
     end
 end
@@ -604,9 +551,6 @@ local function initializeFeatures()
                         espObjects[player].billboard:Destroy()
                         espObjects[player].box:Destroy()
                         espObjects[player].chams:Destroy()
-                        espObjects[player].tracerBeam:Destroy()
-                        espObjects[player].tracerAttach0:Destroy()
-                        espObjects[player].tracerAttach1:Destroy()
                         espObjects[player] = nil
                     end
                 end)
@@ -625,9 +569,6 @@ local function initializeFeatures()
                         espObjects[player].billboard:Destroy()
                         espObjects[player].box:Destroy()
                         espObjects[player].chams:Destroy()
-                        espObjects[player].tracerBeam:Destroy()
-                        espObjects[player].tracerAttach0:Destroy()
-                        espObjects[player].tracerAttach1:Destroy()
                         espObjects[player] = nil
                     end
                 end)
@@ -641,9 +582,6 @@ local function initializeFeatures()
                 espObjects[player].billboard:Destroy()
                 espObjects[player].box:Destroy()
                 espObjects[player].chams:Destroy()
-                espObjects[player].tracerBeam:Destroy()
-                espObjects[player].tracerAttach0:Destroy()
-                espObjects[player].tracerAttach1:Destroy()
                 espObjects[player] = nil
             end
         end)
