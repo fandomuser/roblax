@@ -138,7 +138,7 @@ local function addESP(player)
     box.Size = Vector3.new(4, 6, 2)
     box.Adornee = char
     box.AlwaysOnTop = true
-    box.Transparency = 0.9  -- Increased transparency
+    box.Transparency = 0.8  -- Increased transparency
     box.ZIndex = 0
     box.Color3 = Color3.fromRGB(255, 255, 255)
     
