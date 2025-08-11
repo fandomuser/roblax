@@ -84,57 +84,174 @@ local settings = {
 
 local selectedPlayer = nil  -- For TP to Player
 
--- Functions (with improvements)
+-- Ultimate ESP System (Completely Rewritten for Maximum Beauty and Functionality)
 local espObjects = {}
 local function addESP(player)
     if player == LocalPlayer or not player.Character then return end
     local char = player.Character
     local head = char:WaitForChild("Head", 5)
-    if not head then return end
-    
+    local root = char:WaitForChild("HumanoidRootPart", 5)
+    local humanoid = char:WaitForChild("Humanoid", 5)
+    if not head or not root or not humanoid then return end
+
+    -- Billboard for Name, Role, Distance, Health Bar
     local billboard = Instance.new("BillboardGui", head)
-    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.Size = UDim2.new(0, 250, 0, 100)
     billboard.AlwaysOnTop = true
-    local text = Instance.new("TextLabel", billboard)
-    text.Size = UDim2.new(1, 0, 1, 0)
-    text.BackgroundTransparency = 1
-    text.TextColor3 = Color3.fromRGB(255, 255, 255)
-    text.Font = Enum.Font.Gotham
-    text.TextSize = 14
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
     
+    local frame = Instance.new("Frame", billboard)
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 1
+    
+    local nameLabel = Instance.new("TextLabel", frame)
+    nameLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    nameLabel.Position = UDim2.new(0, 0, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 16
+    nameLabel.TextStrokeTransparency = 0.5
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    
+    local roleLabel = Instance.new("TextLabel", frame)
+    roleLabel.Size = UDim2.new(1, 0, 0.25, 0)
+    roleLabel.Position = UDim2.new(0, 0, 0.3, 0)
+    roleLabel.BackgroundTransparency = 1
+    roleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    roleLabel.Font = Enum.Font.Gotham
+    roleLabel.TextSize = 14
+    roleLabel.TextStrokeTransparency = 0.5
+    roleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    
+    local distLabel = Instance.new("TextLabel", frame)
+    distLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    distLabel.Position = UDim2.new(0, 0, 0.55, 0)
+    distLabel.BackgroundTransparency = 1
+    distLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    distLabel.Font = Enum.Font.Gotham
+    distLabel.TextSize = 12
+    distLabel.TextStrokeTransparency = 0.5
+    distLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    
+    local healthBarFrame = Instance.new("Frame", frame)
+    healthBarFrame.Size = UDim2.new(1, 0, 0.15, 0)
+    healthBarFrame.Position = UDim2.new(0, 0, 0.75, 0)
+    healthBarFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    healthBarFrame.BorderSizePixel = 0
+    local healthCorner = Instance.new("UICorner", healthBarFrame)
+    healthCorner.CornerRadius = UDim.new(0, 4)
+    
+    local healthFill = Instance.new("Frame", healthBarFrame)
+    healthFill.Size = UDim2.new(1, 0, 1, 0)
+    healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    local fillCorner = Instance.new("UICorner", healthFill)
+    fillCorner.CornerRadius = UDim.new(0, 4)
+    local healthGradient = Instance.new("UIGradient", healthFill)
+    healthGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 0))
+    }
+    
+    -- 3D Box with Chams Effect
     local box = Instance.new("BoxHandleAdornment", char)
-    box.Size = Vector3.new(4, 6, 2)  -- Fixed size to avoid long rectangle
+    box.Size = Vector3.new(4, 6, 2)
     box.Adornee = char
     box.AlwaysOnTop = true
-    box.Transparency = 0.7
-    box.ZIndex = 0
+    box.Transparency = 0.6
+    box.ZIndex = 5
+    box.Color3 = Color3.fromRGB(255, 255, 255)
     
-    espObjects[player] = {billboard = billboard, box = box, text = text}
+    local chams = Instance.new("Highlight", char)
+    chams.FillTransparency = 0.8
+    chams.OutlineTransparency = 0
+    chams.FillColor = Color3.fromRGB(255, 255, 255)
+    chams.OutlineColor = Color3.fromRGB(255, 255, 255)
+    
+    -- Tracer Line (Using Beam for Beauty)
+    local tracerAttachment0 = Instance.new("Attachment", Workspace.CurrentCamera)
+    tracerAttachment0.Name = "TracerAttach0_" .. player.Name
+    tracerAttachment0.Position = Vector3.new(0, -Workspace.CurrentCamera.ViewportSize.Y / 2, 0)  -- Bottom of screen
+    
+    local tracerAttachment1 = Instance.new("Attachment", root)
+    tracerAttachment1.Name = "TracerAttach1_" .. player.Name
+    
+    local tracerBeam = Instance.new("Beam", Workspace.CurrentCamera)
+    tracerBeam.Attachment0 = tracerAttachment0
+    tracerBeam.Attachment1 = tracerAttachment1
+    tracerBeam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    tracerBeam.Transparency = NumberSequence.new(0.5)
+    tracerBeam.Width0 = 0.2
+    tracerBeam.Width1 = 0.2
+    tracerBeam.LightEmission = 1
+    tracerBeam.LightInfluence = 0
+    tracerBeam.FaceCamera = true
+    tracerBeam.Enabled = false
+    
+    espObjects[player] = {
+        billboard = billboard,
+        nameLabel = nameLabel,
+        roleLabel = roleLabel,
+        distLabel = distLabel,
+        healthFill = healthFill,
+        box = box,
+        chams = chams,
+        tracerBeam = tracerBeam,
+        tracerAttach0 = tracerAttachment0,
+        tracerAttach1 = tracerAttachment1
+    }
 end
 
 local function updateESP()
     for player, objs in pairs(espObjects) do
         if toggles.esp and player.Character and LocalPlayer.Character then
+            local char = player.Character
+            local head = char:FindFirstChild("Head")
+            local root = char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char:FindFirstChild("Humanoid")
+            if not head or not root or not humanoid then continue end
+            
             local role = "Innocent"
             local color = Color3.fromRGB(0, 255, 0)
-            if player.Backpack:FindFirstChild("Knife") or player.Character:FindFirstChild("Knife") then 
+            if player.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Knife") then 
                 role = "Murderer" 
                 color = Color3.fromRGB(255, 0, 0) 
             end
-            if player.Backpack:FindFirstChild("Gun") or player.Character:FindFirstChild("Gun") then 
+            if player.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Gun") then 
                 role = "Sheriff" 
                 color = Color3.fromRGB(0, 0, 255) 
             end
-            local dist = (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            local health = player.Character.Humanoid.Health
-            objs.text.Text = string.format("%s [%s] | Dist: %.1f | HP: %d", player.Name, role, dist, health)
-            objs.text.TextColor3 = color
+            
+            local dist = (root.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            local healthPercent = humanoid.Health / humanoid.MaxHealth
+            
+            objs.nameLabel.Text = player.Name
+            objs.nameLabel.TextColor3 = color
+            
+            objs.roleLabel.Text = "[" .. role .. "]"
+            objs.roleLabel.TextColor3 = color
+            
+            objs.distLabel.Text = "Dist: " .. math.floor(dist)
+            
+            objs.healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+            objs.healthFill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
+            
             objs.box.Color3 = color
-            objs.billboard.Enabled = true
             objs.box.Visible = true
+            
+            objs.chams.FillColor = color
+            objs.chams.OutlineColor = color
+            objs.chams.Enabled = true
+            
+            objs.tracerBeam.Color = ColorSequence.new(color)
+            objs.tracerBeam.Enabled = true
+            
+            objs.billboard.Enabled = true
         else
             objs.billboard.Enabled = false
             objs.box.Visible = false
+            objs.chams.Enabled = false
+            objs.tracerBeam.Enabled = false
         end
     end
 end
@@ -486,6 +603,10 @@ local function initializeFeatures()
                     if espObjects[player] then
                         espObjects[player].billboard:Destroy()
                         espObjects[player].box:Destroy()
+                        espObjects[player].chams:Destroy()
+                        espObjects[player].tracerBeam:Destroy()
+                        espObjects[player].tracerAttach0:Destroy()
+                        espObjects[player].tracerAttach1:Destroy()
                         espObjects[player] = nil
                     end
                 end)
@@ -503,6 +624,10 @@ local function initializeFeatures()
                     if espObjects[player] then
                         espObjects[player].billboard:Destroy()
                         espObjects[player].box:Destroy()
+                        espObjects[player].chams:Destroy()
+                        espObjects[player].tracerBeam:Destroy()
+                        espObjects[player].tracerAttach0:Destroy()
+                        espObjects[player].tracerAttach1:Destroy()
                         espObjects[player] = nil
                     end
                 end)
@@ -515,6 +640,10 @@ local function initializeFeatures()
             if espObjects[player] then
                 espObjects[player].billboard:Destroy()
                 espObjects[player].box:Destroy()
+                espObjects[player].chams:Destroy()
+                espObjects[player].tracerBeam:Destroy()
+                espObjects[player].tracerAttach0:Destroy()
+                espObjects[player].tracerAttach1:Destroy()
                 espObjects[player] = nil
             end
         end)
