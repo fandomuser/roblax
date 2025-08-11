@@ -103,7 +103,690 @@ local function addESP(player)
     text.TextSize = 14
     
     local box = Instance.new("BoxHandleAdornment", char)
-    box.Size = char:GetExtentsSize()
+    box.Size = Vector3.new(4, 6, 2)  -- Fixed size to avoid long rectangles
+    box.Adornee = char
+    box.AlwaysOnTop = true
+    box.Transparency = 0.7
+    box.ZIndex = 0
+    
+    espObjects[player] = {billboard = billboard, box = box, text = text}
+end
+
+local function updateESP()
+    for player, objs in pairs(espObjects) do
+        if player.Character then
+            local char = player.Character
+            char.ChildRemoved:Connect(function(child)
+                if child.Name == "Head" then
+                    if espObjects[player] then
+                        espObjects[player].billboard:Destroy()
+                        espObjects[player].box:Destroy()
+                        espObjects[player] = nil
+                    end
+                end
+            end)
+        end
+        if toggles.esp and player.Character and LocalPlayer.Character then
+            local role = "Innocent"
+            local color = Color3.fromRGB(0, 255, 0)
+            if player.Backpack:FindFirstChild("Knife") or player.Character:FindFirstChild("Knife") then 
+                role = "Murderer" 
+                color = Color3.fromRGB(255, 0, 0) 
+            end
+            if player.Backpack:FindFirstChild("Gun") or player.Character:FindFirstChild("Gun") then 
+                role = "Sheriff" 
+                color = Color3.fromRGB(0, 0, 255) 
+            end
+            local dist = (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            local health = player.Character.Humanoid.Health
+            objs.text.Text = string.format("%s [%s] | Dist: %.1f | HP: %d", player.Name, role, dist, health)
+            objs.text.TextColor3 = color
+            objs.box.Color3 = color
+            objs.billboard.Enabled = true
+            objs.box.Visible = true
+            objs.box.Size = Vector3.new(4, 6, 2)  -- Ensure fixed size
+        else
+            objs.billboard.Enabled = false
+            objs.box.Visible = false
+        end
+    end
+end
+
+local godmodeConnection
+local function godmode()
+    if toggles.godmode and LocalPlayer.Character then
+        if godmodeConnection then godmodeConnection:Disconnect() end
+        godmodeConnection = LocalPlayer.Character.Humanoid.HealthChanged:Connect(function(health)
+            if health < LocalPlayer.Character.Humanoid.MaxHealth then
+                LocalPlayer.Character.Humanoid.Health = LocalPlayer.Character.Humanoid.MaxHealth
+            end
+        end)
+        LocalPlayer.Character.Humanoid.Health = LocalPlayer.Character.Humanoid.MaxHealth
+    elseif godmodeConnection then
+        godmodeConnection:Disconnect()
+        godmodeConnection = nil
+    end
+end
+
+local function autoFarmCoins()
+    while toggles.autoFarmCoins do
+        local coins = {}
+        for _, coin in ipairs(Workspace:GetChildren()) do
+            if coin.Name == "Coin_Server" then
+                table.insert(coins, coin)
+            end
+        end
+        if #coins == 0 then break end
+        table.sort(coins, function(a, b)
+            return (a.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < (b.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+        end)
+        for _, coin in ipairs(coins) do
+            if LocalPlayer.Character then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = coin.CFrame
+                wait(0.05)
+            end
+        end
+        wait(0.1)
+    end
+end
+
+local function autoGrabGun()
+    if toggles.autoGrabGun then
+        for _, obj in ipairs(Workspace:GetChildren()) do
+            if obj.Name == "GunDrop" and LocalPlayer.Character and not LocalPlayer.Backpack:FindFirstChild("Gun") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
+                wait(0.3)
+                local prompt = obj:FindFirstChildOfClass("ProximityPrompt")
+                if prompt then
+                    fireproximityprompt(prompt)
+                end
+            end
+        end
+    end
+end
+
+local function killAll()
+    if toggles.killAll and (LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")) then
+        local knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack.Knife
+        if knife.Parent ~= LocalPlayer.Character then
+            knife.Parent = LocalPlayer.Character
+        end
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character.Humanoid.Health > 0 and (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 5 then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1)
+                knife:Activate()
+                wait(0.1)
+            end
+        end
+    end
+end
+
+local function revealRoles()
+    if toggles.revealRoles then
+        for _, player in ipairs(Players:GetPlayers()) do
+            local role = "Innocent"
+            if player.Backpack:FindFirstChild("Knife") then role = "Murderer" end
+            if player.Backpack:FindFirstChild("Gun") then role = "Sheriff" end
+            if ReplicatedStorage.DefaultChatSystemChatEvents and ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest then
+                ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(player.Name .. " is " .. role, "All")
+            end
+        end
+        toggles.revealRoles = false
+    end
+end
+
+local function speedHack()
+    if LocalPlayer.Character then
+        LocalPlayer.Character.Humanoid.WalkSpeed = toggles.speedHack and settings.speed or 16
+    end
+end
+
+local aimbotConnection
+local function aimbot()
+    if toggles.aimbot and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun") then
+        local mouse = LocalPlayer:GetMouse()
+        mouse.Icon = "rbxasset://textures\\GunCursor.png"
+        if aimbotConnection then aimbotConnection:Disconnect() end
+        aimbotConnection = mouse.Button1Down:Connect(function()
+            local target = mouse.Target
+            if target and target.Parent and target.Parent:FindFirstChild("Humanoid") and target.Parent ~= LocalPlayer.Character then
+                local gun = LocalPlayer.Character.Gun
+                if gun and gun:FindFirstChild("RemoteEvent") then
+                    local args = { [1] = target.Parent.HumanoidRootPart.Position }
+                    gun.RemoteEvent:FireServer(unpack(args))
+                end
+            end
+        end)
+    elseif aimbotConnection then
+        aimbotConnection:Disconnect()
+        aimbotConnection = nil
+    end
+end
+
+local flyConnection
+local function fly()
+    if toggles.fly and LocalPlayer.Character then
+        local root = LocalPlayer.Character.HumanoidRootPart
+        local bodyVelocity = Instance.new("BodyVelocity", root)
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        
+        if flyConnection then flyConnection:Disconnect() end
+        flyConnection = RunService.RenderStepped:Connect(function()
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            local cam = Workspace.CurrentCamera.CFrame
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then bodyVelocity.Velocity += cam.LookVector * settings.flySpeed end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then bodyVelocity.Velocity -= cam.LookVector * settings.flySpeed end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then bodyVelocity.Velocity -= cam.RightVector * settings.flySpeed end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then bodyVelocity.Velocity += cam.RightVector * settings.flySpeed end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then bodyVelocity.Velocity += Vector3.new(0, settings.flySpeed, 0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then bodyVelocity.Velocity -= Vector3.new(0, settings.flySpeed, 0) end
+        end)
+    elseif flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+        if LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity") then
+            LocalPlayer.Character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity"):Destroy()
+        end
+    end
+end
+
+local infJumpConnection
+local function infJump()
+    if toggles.infJump then
+        if infJumpConnection then infJumpConnection:Disconnect() end
+        infJumpConnection = UserInputService.JumpRequest:Connect(function()
+            if LocalPlayer.Character then
+                LocalPlayer.Character.Humanoid:ChangeState("Jumping")
+            end
+        end)
+    elseif infJumpConnection then
+        infJumpConnection:Disconnect()
+        infJumpConnection = nil
+    end
+end
+
+local highlights = {}
+local function xray()
+    if toggles.xray then
+        for _, obj in ipairs(Workspace:GetChildren()) do
+            if (obj.Name == "Coin_Server" or obj.Name == "GunDrop") and not highlights[obj] then
+                local highlight = Instance.new("Highlight", obj)
+                highlight.FillColor = Color3.fromRGB(255, 255, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+                highlight.FillTransparency = 0.5
+                highlight.OutlineTransparency = 0
+                highlights[obj] = highlight
+            end
+        end
+    else
+        for obj, hl in pairs(highlights) do
+            hl:Destroy()
+        end
+        highlights = {}
+    end
+end
+
+local function tpToMurderer()
+    if toggles.tpToMurderer then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Backpack:FindFirstChild("Knife") and player.Character then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+                toggles.tpToMurderer = false
+                break
+            end
+        end
+    end
+end
+
+local coinEspObjects = {}
+local function updateCoinESP()
+    if toggles.coinESP then
+        for _, obj in ipairs(Workspace:GetChildren()) do
+            if obj.Name == "Coin_Server" and not coinEspObjects[obj] then
+                local billboard = Instance.new("BillboardGui", obj)
+                billboard.Size = UDim2.new(0, 100, 0, 30)
+                billboard.AlwaysOnTop = true
+                local text = Instance.new("TextLabel", billboard)
+                text.Size = UDim2.new(1, 0, 1, 0)
+                text.BackgroundTransparency = 1
+                text.TextColor3 = Color3.fromRGB(255, 215, 0)
+                text.Text = "Coin"
+                coinEspObjects[obj] = {billboard = billboard, text = text}
+            end
+            if coinEspObjects[obj] and LocalPlayer.Character then
+                local dist = (obj.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                coinEspObjects[obj].text.Text = string.format("Coin | Dist: %.1f", dist)
+                coinEspObjects[obj].billboard.Enabled = true
+            end
+        end
+    else
+        for _, data in pairs(coinEspObjects) do
+            data.billboard:Destroy()
+        end
+        coinEspObjects = {}
+    end
+end
+
+local noClipConnection
+local function noClip()
+    if toggles.noClip and LocalPlayer.Character then
+        if noClipConnection then noClipConnection:Disconnect() end
+        noClipConnection = RunService.Stepped:Connect(function()
+            for _, part in ipairs(LocalPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    elseif noClipConnection then
+        noClipConnection:Disconnect()
+        noClipConnection = nil
+        if LocalPlayer.Character then
+            for _, part in ipairs(LocalPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end
+
+local function tpToSheriff()
+    if toggles.tpToSheriff then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Backpack:FindFirstChild("Gun") and player.Character then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+                toggles.tpToSheriff = false
+                break
+            end
+        end
+    end
+end
+
+local function autoThrowKnife()
+    if toggles.autoThrowKnife and LocalPlayer.Character:FindFirstChild("Knife") then
+        local knife = LocalPlayer.Character.Knife
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character.Humanoid.Health > 0 then
+                if knife:FindFirstChild("RemoteEvent") then
+                    knife.RemoteEvent:FireServer(player.Character.Head.Position)
+                end
+                wait(0.2)
+            end
+        end
+    end
+end
+
+local silentAimConnection
+local function silentAim()
+    if toggles.silentAim and LocalPlayer.Character:FindFirstChild("Gun") then
+        if silentAimConnection then silentAimConnection:Disconnect() end
+        silentAimConnection = RunService.RenderStepped:Connect(function()
+            local mouse = LocalPlayer:GetMouse()
+            local target = mouse.Target
+            if target and target.Parent and target.Parent:FindFirstChild("Humanoid") and target.Parent ~= LocalPlayer.Character then
+                local gun = LocalPlayer.Character.Gun
+                if gun and gun:FindFirstChild("RemoteEvent") then
+                    local args = { [1] = target.Parent.Head.Position + Vector3.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) }
+                    gun.RemoteEvent:FireServer(unpack(args))
+                end
+            end
+        end)
+    elseif silentAimConnection then
+        silentAimConnection:Disconnect()
+        silentAimConnection = nil
+    end
+end
+
+local function unlockCrates()
+    if toggles.unlockCrates then
+        for _, crate in ipairs(Workspace:GetChildren()) do
+            if crate:IsA("Model") and crate.Name:match("Crate") then
+                if ReplicatedStorage.Remotes and ReplicatedStorage.Remotes.OpenCrate then
+                    ReplicatedStorage.Remotes.OpenCrate:FireServer(crate)
+                end
+            end
+        end
+        toggles.unlockCrates = false
+    end
+end
+
+local antiAFKConnection
+local function antiAFK()
+    if toggles.antiAFK then
+        if antiAFKConnection then antiAFKConnection:Disconnect() end
+        antiAFKConnection = LocalPlayer.Idled:Connect(function()
+            game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+        end)
+    elseif antiAFKConnection then
+        antiAFKConnection:Disconnect()
+        antiAFKConnection = nil
+    end
+end
+
+local function tpToPlayer(targetPlayer)
+    if targetPlayer and targetPlayer.Character and LocalPlayer.Character then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+        notify("TP", "Телепортирован к " .. targetPlayer.Name, 3, Color3.fromRGB(0, 255, 0))
+    end
+end
+
+-- Persistence
+local mainLoopConnection
+local function initializeFeatures()
+    -- Clear previous connections
+    if mainLoopConnection then mainLoopConnection:Disconnect() end
+    if godmodeConnection then godmodeConnection:Disconnect() end
+    if aimbotConnection then aimbotConnection:Disconnect() end
+    if flyConnection then flyConnection:Disconnect() end
+    if infJumpConnection then infJumpConnection:Disconnect() end
+    if noClipConnection then noClipConnection:Disconnect() end
+    if silentAimConnection then silentAimConnection:Disconnect() end
+    if antiAFKConnection then antiAFKConnection:Disconnect() end
+    espObjects = {}
+    highlights = {}
+    coinEspObjects = {}
+    
+    -- Re-add ESP
+    for _, player in ipairs(Players:GetPlayers()) do
+        addESP(player)
+        player.CharacterAdded:Connect(function()
+            addESP(player)
+        end)
+        player.CharacterRemoving:Connect(function()
+            if espObjects[player] then
+                espObjects[player].billboard:Destroy()
+                espObjects[player].box:Destroy()
+                espObjects[player] = nil
+            end
+        end)
+    end
+    Players.PlayerAdded:Connect(function(player)
+        addESP(player)
+        player.CharacterAdded:Connect(function()
+            addESP(player)
+        end)
+        player.CharacterRemoving:Connect(function()
+            if espObjects[player] then
+                espObjects[player].billboard:Destroy()
+                espObjects[player].box:Destroy()
+                espObjects[player] = nil
+            end
+        end)
+    end)
+
+    -- Main Loop
+    mainLoopConnection = RunService.RenderStepped:Connect(function()
+        updateESP()
+        godmode()
+        speedHack()
+        aimbot()
+        killAll()
+        autoGrabGun()
+        revealRoles()
+        fly()
+        infJump()
+        xray()
+        tpToMurderer()
+        tpToSheriff()
+        noClip()
+        autoThrowKnife()
+        silentAim()
+        updateCoinESP()
+        unlockCrates()
+        antiAFK()
+    end)
+
+    spawn(autoFarmCoins)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    repeat wait() until character and character:FindFirstChild("HumanoidRootPart")
+    initializeFeatures()
+    notify("Neverloose.cc", "Скрипт перезапущен после респавна!", 3, Color3.fromRGB(0, 255, 0))
+end)
+
+if LocalPlayer.Character then
+    initializeFeatures()
+end
+
+-- Menu
+local menuGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+menuGui.IgnoreGuiInset = true
+menuGui.ResetOnSpawn = false  -- Preserve GUI on respawn
+local mainFrame = Instance.new("Frame", menuGui)
+mainFrame.Size = UDim2.new(0, 400, 0, 450)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.ClipsDescendants = true
+mainFrame.Transparency = 1
+mainFrame.Active = true
+
+local corner = Instance.new("UIC Пользователь сказал "Все, отлично. Только есть один минус. ESP как то сломался, он работает некорректно, грубо говоря некоторых отображает а некоторых нет, еще и какой то красный длинный прямоугольник взади меня преследует меня."
+
+Чтобы исправить ESP:
+
+- Для красного прямоугольника: Вероятно, BoxHandleAdornment для LocalPlayer или ошибка.
+
+В коде if player == LocalPlayer then return end, но возможно, когда player.Character for LocalPlayer добавляется.
+
+В addESP: if player == LocalPlayer or not player.Character then return end
+
+Но player.Character for LocalPlayer exists.
+
+Возможно, в Players.PlayerAdded, когда LocalPlayer added? No, PlayerAdded for new players.
+
+LocalPlayer already there.
+
+Возможно, box.AlwaysOnTop делает его видимым.
+
+Чтобы фикс: В updateESP, добавить if player == LocalPlayer then objs.box.Visible = false end, но since not added, no.
+
+Возможно, баг в GetExtentsSize() делает box длинным.
+
+Изменить box.Size = Vector3.new(4, 6, 2) fixed for human.
+
+Да, сделаем fixed size.
+
+Для некоторых не отображает: Возможно, if not player.Character then return in addESP, but for new players, Character may not be loaded yet.
+
+Сделать player.CharacterAdded:Connect(function() addESP(player) end) for each player.
+
+Но for initial, if not char, skip.
+
+В addESP: player.CharacterAdded:Connect(function(char) addESP(player) end) but recursive.
+
+Лучше: Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        addESP(player)
+    end)
+end)
+
+And for initial players: for _, player in Players:GetPlayers() do if player.Character then addESP(player) end player.CharacterAdded:Connect... end
+
+Да, это стандартно for Roblox scripts to handle respawn.
+
+В current code, addESP on PlayerAdded, but if Character not loaded, return.
+
+So, to fix, move addESP inside player.CharacterAdded.
+
+Also, for LocalPlayer.CharacterChanged or something.
+
+Для red rectangle: Possibly box for self.
+
+Add explicit check.
+
+Для TP to Player: Already in code.
+
+The code I have is the full one.
+
+Now, to output the full code with fixes.
+
+First, fix ESP addition.
+
+In initializeFeatures:
+
+-- Clear espObjects = {}
+
+Then:
+
+local function setupESP()
+    espObjects = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            player.CharacterAdded:Connect(function(char)
+                addESP(player)
+            end)
+            if player.Character then
+                addESP(player)
+            end
+        end
+    end
+    Players.PlayerAdded:Connect(function(player)
+        if player ~= LocalPlayer then
+            player.CharacterAdded:Connect(function(char)
+                addESP(player)
+            end)
+            if player.Character then
+                addESP(player)
+            end
+        end
+    end)
+end
+
+Call setupESP() in initializeFeatures.
+
+Also, in player.CharacterRemoving:Connect(function() if espObjects[player] then espObjects[player].billboard:Destroy() espObjects[player].box:Destroy() espObjects[player] = nil end end)
+
+To clean up.
+
+Add in Players.PlayerRemoving:Connect(function(player)
+    if espObjects[player] then
+        espObjects[player].billboard:Destroy()
+        espObjects[player].box:Destroy()
+        espObjects[player] = nil
+    end
+end)
+
+Yes.
+
+For box size: In addESP: box.Size = Vector3.new(4, 6, 2)
+
+In updateESP: if player.Character then objs.box.Size = player.Character:GetExtentsSize() end -- but to avoid long, keep fixed.
+
+Fixed is better to avoid bugs.
+
+Ok.
+
+The rest is the same.repeat wait() until game:IsLoaded()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local TweenInfo = TweenInfo.new
+local Workspace = game:GetService("Workspace")
+
+-- Enhanced Notification (Higher position)
+local function notify(title, text, duration, color)
+    duration = duration or 3
+    color = color or Color3.fromRGB(255, 255, 255)
+    local gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+    gui.IgnoreGuiInset = true
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0, 300, 0, 70)
+    frame.Position = UDim2.new(1, -310, 1, -200)  -- Even higher
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    frame.BorderSizePixel = 0
+    frame.Transparency = 1
+    local corner = Instance.new("UICorner", frame)
+    corner.CornerRadius = UDim.new(0, 10)
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Color = Color3.fromRGB(0, 150, 255)
+    stroke.Transparency = 0.4
+
+    local titleLabel = Instance.new("TextLabel", frame)
+    titleLabel.Text = title
+    titleLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    titleLabel.Position = UDim2.new(0, 15, 0, 5)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextColor3 = color
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 18
+
+    local textLabel = Instance.new("TextLabel", frame)
+    textLabel.Text = text
+    textLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    textLabel.Position = UDim2.new(0, 15, 0.5, -5)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextSize = 14
+
+    TweenService:Create(frame, TweenInfo(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0, Position = UDim2.new(1, -310, 1, -210)}):Play()
+    wait(duration)
+    TweenService:Create(frame, TweenInfo(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1, Position = UDim2.new(1, 0, 1, -210)}):Play()
+    wait(0.5)
+    gui:Destroy()
+end
+
+notify("Neverloose.cc", "Скрипт загружен! Нажми 'Delete' для меню.", 5, Color3.fromRGB(0, 200, 255))
+
+-- Toggles and Settings
+local toggles = {
+    esp = false,
+    godmode = false,
+    autoFarmCoins = false,
+    autoGrabGun = false,
+    killAll = false,
+    revealRoles = false,
+    speedHack = false,
+    aimbot = false,
+    fly = false,
+    infJump = false,
+    xray = false,
+    tpToMurderer = false,
+    tpToSheriff = false,
+    noClip = false,
+    autoThrowKnife = false,
+    silentAim = false,
+    coinESP = false,
+    unlockCrates = false,
+    antiAFK = true
+}
+
+local settings = {
+    speed = 50,
+    flySpeed = 100,
+    theme = "Dark"
+}
+
+local selectedPlayer = nil  -- For TP to Player
+
+-- Functions (with improvements)
+local espObjects = {}
+local function addESP(player)
+    if player == LocalPlayer or not player.Character then return end
+    local char = player.Character
+    local head = char:WaitForChild("Head", 5)
+    if not head then return end
+    
+    local billboard = Instance.new("BillboardGui", head)
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.AlwaysOnTop = true
+    local text = Instance.new("TextLabel", billboard)
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    text.Font = Enum.Font.Gotham
+    text.TextSize = 14
+    
+    local box = Instance.new("BoxHandleAdornment", char)
+    box.Size = Vector3.new(4, 6, 2)  -- Fixed size to avoid long rectangle
     box.Adornee = char
     box.AlwaysOnTop = true
     box.Transparency = 0.7
@@ -475,11 +1158,51 @@ local function initializeFeatures()
     highlights = {}
     coinEspObjects = {}
     
-    -- Re-add ESP
-    for _, player in ipairs(Players:GetPlayers()) do
-        addESP(player)
+    -- Re-setup ESP with CharacterAdded
+    local function setupESP()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                player.CharacterAdded:Connect(function(char)
+                    addESP(player)
+                end)
+                player.CharacterRemoving:Connect(function()
+                    if espObjects[player] then
+                        espObjects[player].billboard:Destroy()
+                        espObjects[player].box:Destroy()
+                        espObjects[player] = nil
+                    end
+                end)
+                if player.Character then
+                    addESP(player)
+                end
+            end
+        end
+        Players.PlayerAdded:Connect(function(player)
+            if player ~= LocalPlayer then
+                player.CharacterAdded:Connect(function(char)
+                    addESP(player)
+                end)
+                player.CharacterRemoving:Connect(function()
+                    if espObjects[player] then
+                        espObjects[player].billboard:Destroy()
+                        espObjects[player].box:Destroy()
+                        espObjects[player] = nil
+                    end
+                end)
+                if player.Character then
+                    addESP(player)
+                end
+            end
+        end)
+        Players.PlayerRemoving:Connect(function(player)
+            if espObjects[player] then
+                espObjects[player].billboard:Destroy()
+                espObjects[player].box:Destroy()
+                espObjects[player] = nil
+            end
+        end)
     end
-    Players.PlayerAdded:Connect(addESP)
+    setupESP()
 
     -- Main Loop
     mainLoopConnection = RunService.RenderStepped:Connect(function()
