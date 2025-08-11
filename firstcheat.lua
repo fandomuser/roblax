@@ -84,7 +84,7 @@ local settings = {
 
 local selectedPlayer = nil  -- For TP to Player
 
--- Ultimate ESP System (Adjusted: Removed HP bar and tracers, increased transparency)
+-- Ultimate ESP System (Adjusted: Removed HP bar, tracers, and boxes; only chams with high transparency)
 local espObjects = {}
 local function addESP(player)
     if player == LocalPlayer or not player.Character then return end
@@ -95,7 +95,7 @@ local function addESP(player)
 
     -- Billboard for Name, Role, Distance
     local billboard = Instance.new("BillboardGui", head)
-    billboard.Size = UDim2.new(0, 250, 0, 80)
+    billboard.Size = UDim2.new(0, 250, 0, 100)  -- Increased height to prevent overlap
     billboard.AlwaysOnTop = true
     billboard.StudsOffset = Vector3.new(0, 3, 0)
     
@@ -104,7 +104,7 @@ local function addESP(player)
     frame.BackgroundTransparency = 1
     
     local nameLabel = Instance.new("TextLabel", frame)
-    nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
+    nameLabel.Size = UDim2.new(1, 0, 0.33, 0)
     nameLabel.Position = UDim2.new(0, 0, 0, 0)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -112,35 +112,29 @@ local function addESP(player)
     nameLabel.TextSize = 16
     nameLabel.TextStrokeTransparency = 0.5
     nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.TextTruncate = Enum.TextTruncate.SplitWord
     
     local roleLabel = Instance.new("TextLabel", frame)
-    roleLabel.Size = UDim2.new(1, 0, 0.3, 0)
-    roleLabel.Position = UDim2.new(0, 0, 0.4, 0)
+    roleLabel.Size = UDim2.new(1, 0, 0.33, 0)
+    roleLabel.Position = UDim2.new(0, 0, 0.33, 0)
     roleLabel.BackgroundTransparency = 1
     roleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     roleLabel.Font = Enum.Font.Gotham
     roleLabel.TextSize = 14
     roleLabel.TextStrokeTransparency = 0.5
     roleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    roleLabel.TextTruncate = Enum.TextTruncate.SplitWord
     
     local distLabel = Instance.new("TextLabel", frame)
-    distLabel.Size = UDim2.new(1, 0, 0.3, 0)
-    distLabel.Position = UDim2.new(0, 0, 0.7, 0)
+    distLabel.Size = UDim2.new(1, 0, 0.33, 0)
+    distLabel.Position = UDim2.new(0, 0, 0.66, 0)
     distLabel.BackgroundTransparency = 1
     distLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
     distLabel.Font = Enum.Font.Gotham
     distLabel.TextSize = 12
     distLabel.TextStrokeTransparency = 0.5
     distLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    
-    -- 3D Box with High Transparency
-    local box = Instance.new("BoxHandleAdornment", char)
-    box.Size = Vector3.new(4, 6, 2)
-    box.Adornee = char
-    box.AlwaysOnTop = true
-    box.Transparency = 0.8  -- Increased transparency
-    box.ZIndex = 0
-    box.Color3 = Color3.fromRGB(255, 255, 255)
+    distLabel.TextTruncate = Enum.TextTruncate.SplitWord
     
     -- Chams with High Transparency for Skin Visibility
     local chams = Instance.new("Highlight", char)
@@ -154,7 +148,6 @@ local function addESP(player)
         nameLabel = nameLabel,
         roleLabel = roleLabel,
         distLabel = distLabel,
-        box = box,
         chams = chams
     }
 end
@@ -187,9 +180,6 @@ local function updateESP()
             
             objs.distLabel.Text = "Dist: " .. math.floor(dist)
             
-            objs.box.Color3 = color
-            objs.box.Visible = true
-            
             objs.chams.FillColor = color
             objs.chams.OutlineColor = color
             objs.chams.Enabled = true
@@ -197,7 +187,6 @@ local function updateESP()
             objs.billboard.Enabled = true
         else
             objs.billboard.Enabled = false
-            objs.box.Visible = false
             objs.chams.Enabled = false
         end
     end
@@ -549,7 +538,6 @@ local function initializeFeatures()
                 player.CharacterRemoving:Connect(function()
                     if espObjects[player] then
                         espObjects[player].billboard:Destroy()
-                        espObjects[player].box:Destroy()
                         espObjects[player].chams:Destroy()
                         espObjects[player] = nil
                     end
@@ -567,7 +555,6 @@ local function initializeFeatures()
                 player.CharacterRemoving:Connect(function()
                     if espObjects[player] then
                         espObjects[player].billboard:Destroy()
-                        espObjects[player].box:Destroy()
                         espObjects[player].chams:Destroy()
                         espObjects[player] = nil
                     end
@@ -580,7 +567,6 @@ local function initializeFeatures()
         Players.PlayerRemoving:Connect(function(player)
             if espObjects[player] then
                 espObjects[player].billboard:Destroy()
-                espObjects[player].box:Destroy()
                 espObjects[player].chams:Destroy()
                 espObjects[player] = nil
             end
