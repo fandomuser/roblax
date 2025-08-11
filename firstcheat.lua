@@ -408,12 +408,13 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Toggle Menu Keybind (Changed to RightShift for convenience)
+-- Toggle Menu Keybind (Changed to delete for convenience)
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.Delete then
         mainFrame.Visible = not mainFrame.Visible
     end
 end)
+
 
 
 
