@@ -735,5 +735,6 @@ ContentScrolling:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(functio
     ContentScrolling.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 30)
 end)
 
-print("Neverloose Legendary Loaded! Press Insert to toggle the ultimate GUI.")
+print("Neverloose Loaded! Press Insert to toggle the GUI.")
+
 
